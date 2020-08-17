@@ -131,12 +131,16 @@ def idef_split(pixel: np.ndarray, phase: int) -> bool:
         return False
     else:
         for item in jumps:
-            if item not in range(phase_jumps[0], phase_jumps[-1] + 1):
+            if item in range(phase_jumps[0], phase_jumps[-1] + 1):
+                continue
+            else:
                 return False
 
         for item in peaks:
             for samp in item:
-                if samp not in range(phase_jumps[0] - 1, phase_jumps[-1] + 2):
+                if samp in range(phase_jumps[0] - 1, phase_jumps[-1] + 2):
+                    continue
+                else:
                     return False
     return True
 
