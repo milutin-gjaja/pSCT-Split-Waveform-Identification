@@ -9,6 +9,7 @@ sns.set_style("whitegrid")
 import utils
 import os
 import time
+from numba import njit
 
 grid_ind = utils.get_grid_ind()
 
@@ -79,7 +80,8 @@ def graph_split(event, pix, runID, graph=False, correct=False):
 
 
 
-def idef_split(pixel, phase):
+@njit
+def idef_split(pixel: np.ndarray, phase: int) -> bool:
     """
     A function that identifies whether a waveform is a split or not. The main points:
     - Checks if there are groups of consecutive samples in the calibrated waveform above a certain threshold ("peaks"),
@@ -91,7 +93,7 @@ def idef_split(pixel, phase):
     :param phase: the phase information for the event in question
     :return: returns True if the waveform is a split, False if not
     """
-    deriv = np.abs(np.gradient(pixel))
+    deriv = np.abs(deriv_1d(pixel))
     jumps = []
     phase_jumps = []
     peaks = []
@@ -110,6 +112,9 @@ def idef_split(pixel, phase):
                     break
         i += 1
 
+    if len(peaks) != 2 or len([i for i in peaks if len(i) > 2]) != len(peaks):
+        return False
+        
     for i in range(1, len(deriv)):
         if deriv[i] > np.mean(deriv) + 2 * np.std(deriv):
             jumps.append(i)
@@ -119,8 +124,6 @@ def idef_split(pixel, phase):
                 phase_jumps.append(i)
 
     if len(jumps) == 0:
-        return False
-    elif len(peaks) != 2 or len([i for i in peaks if len(i) > 2]) != len(peaks):
         return False
     elif len(phase_jumps) != 4:
         return False
@@ -138,6 +141,22 @@ def idef_split(pixel, phase):
     return True
 
 
+
+@njit
+def deriv_1d(f: np.ndarray) -> np.ndarray:
+    """
+    A quick function that calculates the derivative for a given array, to be used when plotting waveforms. This was
+    created due to a lack of compatibility between numba and np.gradient
+    
+    :param f: A single-dimensional array
+    :return: grad, an array of the same size of f that contains the values of the derivative at each point
+    """
+    grad = np.zeros(len(f))
+    grad[0] = f[1] - f[0]
+    grad[-1] = f[-1] - f[-2]
+    for i in range(1, len(f)-1):
+        grad[i] = ((f[i] - f[i-1]) + (f[i+1] - f[i]) / 2.)
+    return grad
 
 
 
