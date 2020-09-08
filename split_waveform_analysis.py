@@ -41,6 +41,10 @@ def graph_split(event, pix, runID, graph=False, correct=False):
     id_pix = [grid_ind[i] for i in range(1536)]
     translated = [id_pix.index(i) for i in pix]
 
+    col1 = fits.Column(name = "Events", format = "F", array = np.zeros((len(event),)))
+    t = fits.BinTableHDU.from_columns([col1])
+    t.writeto("run_{}_split_corrected.fits".format(runID))
+    
     for idef, ev in enumerate(event):
         cal_waveforms = np.zeros((n_pixels, n_samples), dtype=np.float32)
         calreader.GetR1Event(ev, cal_waveforms)
@@ -72,8 +76,10 @@ def graph_split(event, pix, runID, graph=False, correct=False):
                     # ax.legend()
                     # ax1.legend()
                     plt.show()
-
+                    
+        fits.append("run_{}_split_corrected.fits".format(runID), cal_waveforms, hdr = "Events")       
         split_pix[1].append(ev_splits)
+        
     return split_pix
 
 
@@ -94,7 +100,6 @@ def idef_split(pixel: np.ndarray, phase: int) -> bool:
     :return: returns True if the waveform is a split, False if not
     """
     deriv = np.abs(deriv_1d(pixel))
-    jumps = []
     phase_jumps = []
     peaks = []
     threshold = 100
@@ -116,32 +121,24 @@ def idef_split(pixel: np.ndarray, phase: int) -> bool:
         return False
         
     for i in range(1, len(deriv)):
-        if deriv[i] > np.mean(deriv) + 2 * np.std(deriv):
-            jumps.append(i)
-        if (i + phase) % 32 == 0 and (i - 1 + phase) % 32 == 31:
-            if (deriv[i] + deriv[i - 1]) / 2 > (np.mean(deriv) + 2 * np.std(deriv)):
-                phase_jumps.append(i - 1)
+        if (deriv[i] + deriv[i - 1])/4 > 90:
+            if (i + phase) % 32 == 0:
                 phase_jumps.append(i)
-
-    if len(jumps) == 0:
-        return False
-    elif len(phase_jumps) != 4:
-        return False
-    elif phase_jumps[2] - phase_jumps[0] != 64:
-        return False
-    else:
-        for item in jumps:
-            if item in range(phase_jumps[0], phase_jumps[-1] + 1):
-                continue
             else:
                 return False
 
+    if len(phase_jumps) != 2:
+        return False
+    elif phase_jumps[1] - phase_jumps[0] != 64:
+        return False
+    else:
         for item in peaks:
             for samp in item:
                 if samp in range(phase_jumps[0] - 1, phase_jumps[-1] + 2):
                     continue
                 else:
                     return False
+
     return True
 
 
