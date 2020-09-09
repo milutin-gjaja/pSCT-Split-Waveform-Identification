@@ -269,3 +269,13 @@ def graph_wf(event, pix, runID, calcheck=True, uncalcheck=True, ex_flash=False):
                 for item in pix:
                     ax.plot(np.arange(len(uncal_waveforms[item])), uncal_waveforms[item], 'b', alpha=trans)
     plt.show()
+
+    
+"""
+Main
+"""
+
+run = 328719
+event = [i for i in range(100, 200)] #change the range for different number of events
+pix = [grid_ind[i] for i in range(1536)]
+results = graph_split(event, pix, run, correct = True)
