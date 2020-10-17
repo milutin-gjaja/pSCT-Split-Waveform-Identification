@@ -271,6 +271,51 @@ def graph_wf(event, pix, runID, calcheck=True, uncalcheck=True, ex_flash=False):
     plt.show()
 
     
+    
+   
+def camera_splits(results):
+    """
+    A useful visualization function that graphs the 40 by 40 camera image and highlights the areas with a large number
+    of splits. vmax, the highest value shown, is hardcoded to 10 for use with a logarithmic scale, but this can be
+    changed.
+    
+    :param results: A (1600, 2) array with an ordered list of pixels and the corresponding number of splits
+    """
+    image = np.zeros((40, 40))
+    for i, val in enumerate(results):
+        image[i//40, i%40] = val
+    
+#     fig = plt.figure(figsize = (10, 10))
+#     im = plt.imshow(image, origin = "lower", vmin = 0, vmax = 10.4, cmap = "viridis")
+#     fig.colorbar(im)
+
+    x_list = []
+    y_list = []
+    x_list_pos = []
+    y_list_pos = []
+    for m in range(5):
+        for k in range(5):
+            x_list.append(np.asarray([i - 20 + 0.31 * ((i // 9) - 2) -1*(i//9) for i in range(9*k,9*(k+1))]).T)
+            y_list.append(np.asarray([j - 20 + 0.31 * ((j // 9) - 2) -1*(j//9) for j in range(9*m,9*(m+1))]).T)
+            x_list_pos.append(np.asarray([i for i in range(8*k,8*(k+1))]).T)
+            y_list_pos.append(np.asarray([j for j in range(8*m,8*(m+1))]).T)
+
+    fig = plt.figure(figsize=(10,10))
+    ax = plt.subplot(1,1,1)
+    ax.set_xlim(-25,25)
+    ax.set_ylim(-25,25)
+    for k in range(25):
+        xx, yy = np.meshgrid(x_list[k],y_list[k])
+        xx_pos, yy_pos = np.meshgrid(x_list_pos[k],y_list_pos[k])
+        ax.pcolor(xx,yy,image[yy_pos,xx_pos],vmin=0,vmax=10, cmap="viridis")
+        x_B = y_B = np.asarray([i - 19.5 + 0.31 * ((i // 8) - 2) for i in range(40)]).T
+        x_B_mg, y_B_mg = np.meshgrid(x_B,y_B)
+        ax.plot(x_B_mg, y_B_mg, 'o',color='white', markersize=2)
+        ax.plot(0.,0.,'r+',markersize=1000)
+    plt.show()
+    
+    
+    
 """
 Main
 """
